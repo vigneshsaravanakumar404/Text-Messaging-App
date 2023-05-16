@@ -104,12 +104,7 @@ public class MainActivity extends AppCompatActivity {
                 }
 
 
-                /*
-                 *
-                 *
-                 * Code for message response
-                 *
-                 */
+                // Create an asynch thread to
 
 
                 // Respond after a few seconds
