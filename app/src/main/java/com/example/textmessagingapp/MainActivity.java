@@ -10,6 +10,7 @@ import android.os.Bundle;
 import android.os.Handler;
 import android.telephony.SmsManager;
 import android.telephony.SmsMessage;
+import android.widget.TextView;
 import android.widget.Toast;
 
 import androidx.annotation.NonNull;
@@ -17,53 +18,66 @@ import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.app.ActivityCompat;
 import androidx.core.content.ContextCompat;
 
-
 public class MainActivity extends AppCompatActivity {
 
-    // Variables
 
-    final int REQUESTCODE = 1;
+    private static final int SMS_PERMISSION_REQUEST_CODE = 1;
     final String phoneNumber = "+15555215556";
-
-    //    final String[] openings = {"Hello", "Hey there", "What's up", "Hi", "Hey"};
-//    final String[] closings = {"Bye", "Goodbye", "See you later", "Talk to you later", "Later"};
     final String API_KEY = "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";
     BroadcastReceiver br;
     Handler handler = new Handler();
+    TextView textView = findViewById(R.id.textView);
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
-        // Permissions
-        // request permissions
-
-
-        if (ContextCompat.checkSelfPermission(this, Manifest.permission.RECEIVE_SMS) != PackageManager.PERMISSION_GRANTED || ContextCompat.checkSelfPermission(this, Manifest.permission.SEND_SMS) != PackageManager.PERMISSION_GRANTED) {
-            ActivityCompat.requestPermissions(MainActivity.this, new String[]{Manifest.permission.RECEIVE_SMS, Manifest.permission.SEND_SMS}, REQUESTCODE);
-        } else {
-            registerSmsReceiver();
-        }
 
         getWindow().getDecorView().setSystemUiVisibility(0);
+        if (checkSmsPermissions()) {
+            registerSmsReceiver();
+        } else {
+            requestSmsPermissions();
+        }
 
+    }
 
+    private boolean checkSmsPermissions() {
+        // Check if the RECEIVE_SMS and SEND_SMS permissions are granted
+        int receiveSmsPermission = ContextCompat.checkSelfPermission(this, Manifest.permission.RECEIVE_SMS);
+        int sendSmsPermission = ContextCompat.checkSelfPermission(this, Manifest.permission.SEND_SMS);
+
+        return receiveSmsPermission == PackageManager.PERMISSION_GRANTED &&
+                sendSmsPermission == PackageManager.PERMISSION_GRANTED;
+    }
+
+    private void requestSmsPermissions() {
+        // Request the RECEIVE_SMS and SEND_SMS permissions
+        ActivityCompat.requestPermissions(this,
+                new String[]{Manifest.permission.RECEIVE_SMS, Manifest.permission.SEND_SMS},
+                SMS_PERMISSION_REQUEST_CODE);
     }
 
     @Override
     public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions, @NonNull int[] grantResults) {
         super.onRequestPermissionsResult(requestCode, permissions, grantResults);
 
-        if (requestCode == REQUESTCODE) {
+        if (requestCode == SMS_PERMISSION_REQUEST_CODE) {
+            // Check if all permissions are granted
+            boolean allPermissionsGranted = true;
+            for (int result : grantResults) {
+                if (result != PackageManager.PERMISSION_GRANTED) {
+                    allPermissionsGranted = false;
+                    break;
+                }
+            }
 
-            getPackageManager();
-            if (grantResults.length > 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
-
+            if (allPermissionsGranted) {
                 registerSmsReceiver();
             } else {
-
-                Toast.makeText(this, "SMS permissions have been denied", Toast.LENGTH_SHORT).show();
+                textView.setText("Permissions not granted, restart the app and grant permissions");
+                Toast.makeText(this, "Permissions not granted", Toast.LENGTH_SHORT).show();
             }
         }
     }
@@ -80,7 +94,6 @@ public class MainActivity extends AppCompatActivity {
                     for (Object pdu : pdus) {
                         SmsMessage message = SmsMessage.createFromPdu((byte[]) pdu);
                         String messageBody = message.getDisplayMessageBody();
-                        String response = messageBody;
                     }
                 }
 
