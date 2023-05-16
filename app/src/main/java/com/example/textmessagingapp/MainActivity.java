@@ -1,12 +1,12 @@
 package com.example.textmessagingapp;
 
+
 import android.Manifest;
 import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
 import android.content.pm.PackageManager;
-import android.os.AsyncTask;
 import android.os.Bundle;
 import android.os.Handler;
 import android.telephony.SmsManager;
@@ -20,22 +20,17 @@ import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.app.ActivityCompat;
 import androidx.core.content.ContextCompat;
 
-import org.json.JSONObject;
-
-import java.io.BufferedReader;
-import java.io.InputStreamReader;
-import java.net.HttpURLConnection;
-import java.net.URL;
 
 public class MainActivity extends AppCompatActivity {
 
-
+    TextView textView;
     private static final int SMS_PERMISSION_REQUEST_CODE = 1;
     final String phoneNumber = "+15555215556";
     BroadcastReceiver br;
+    String input = "";
     Handler handler = new Handler();
-    TextView textView;
-    String history = "";
+    int j = 0;
+    private SmsManager smsManager;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -54,6 +49,7 @@ public class MainActivity extends AppCompatActivity {
         } else {
             requestSmsPermissions();
         }
+        smsManager = SmsManager.getDefault();
 
     }
 
@@ -95,28 +91,6 @@ public class MainActivity extends AppCompatActivity {
         }
     }
 
-    public static String chatGPT(String text) throws Exception {
-        String url = "https://api.openai.com/v1/completions";
-        HttpURLConnection con = (HttpURLConnection) new URL(url).openConnection();
-
-        con.setRequestMethod("POST");
-        con.setRequestProperty("Content-Type", "application/json");
-        con.setRequestProperty("Authorization", "Bearer " + APIKey.API_KEY);
-
-        JSONObject data = new JSONObject();
-        data.put("model", "gpt-3.5-turbo");
-        data.put("prompt", text);
-        data.put("max_tokens", 4000);
-        data.put("temperature", 1.0);
-
-        con.setDoOutput(true);
-        con.getOutputStream().write(data.toString().getBytes());
-
-        String output = new BufferedReader(new InputStreamReader(con.getInputStream())).lines().reduce((a, b) -> a + b).get();
-
-        return new JSONObject(output).getJSONArray("choices").getJSONObject(0).getString("text");
-    }
-
     private void registerSmsReceiver() {
 
         br = new BroadcastReceiver() {
@@ -129,43 +103,39 @@ public class MainActivity extends AppCompatActivity {
                         SmsMessage message = SmsMessage.createFromPdu((byte[]) pdu);
                         String messageBody = message.getDisplayMessageBody();
                         Log.d("TAG", messageBody);
+                        input = messageBody;
+
+
                     }
                 }
-
-                history += intent.getStringExtra("sms");
-
-                // Respond after a few seconds
+                // set a 3 second delay
                 handler.postDelayed(new Runnable() {
                     @Override
                     public void run() {
-                        SendMessageTask sendMessageTask = new SendMessageTask();
-                        sendMessageTask.execute();
+                        GPT3ChatUtil gpt3Utils = new GPT3ChatUtil();
+                        GPT3ChatUtil.getChatResponse(input, new GPT3ChatUtil.GPT3ChatCallback() {
+                            @Override
+                            public void onSuccess(String response) {
+                                Log.d("TAG", response);
+                                smsManager.sendTextMessage(phoneNumber, null, response, null, null);
+                            }
+
+                            @Override
+                            public void onFailure(String errorMessage) {
+                                Log.e("TAG", errorMessage);
+                                smsManager.sendTextMessage(phoneNumber, null, "Sorry, I don't understand", null, null);
+                            }
+                        });
                     }
                 }, 100);
 
 
             }
         };
+
         registerReceiver(br, new IntentFilter("android.provider.Telephony.SMS_RECEIVED"));
-
-
     }
 
-    private class SendMessageTask extends AsyncTask<Void, Void, Void> {
-        @Override
-        protected Void doInBackground(Void... voids) {
-            // Perform your background task, such as sending the message
-            SmsManager smsManager = SmsManager.getDefault();
-            try {
-                String response = chatGPT("Pretend you are in a text conversation and the conversation went like this '" + history + "' respond to the conversation appropriately in text message style");
-                history += response;
-                smsManager.sendTextMessage(phoneNumber, null, response, null, null);
-            } catch (Exception e) {
-                throw new RuntimeException(e);
-            }
-            return null;
-        }
-    }
 
 }
 // TODO:
