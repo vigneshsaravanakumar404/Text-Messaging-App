@@ -1,6 +1,7 @@
 *.iml
 .gradle
 /local.properties
+C:\Users\Vigne\AndroidStudioProjects\textMessagingApp\app\src\main\java\com\example\textmessagingapp\APIKey.java
 /.idea/caches
 /.idea/libraries
 /.idea/modules.xml

@@ -10,6 +10,7 @@ import android.os.Bundle;
 import android.os.Handler;
 import android.telephony.SmsManager;
 import android.telephony.SmsMessage;
+import android.util.Log;
 import android.widget.TextView;
 import android.widget.Toast;
 
@@ -22,11 +23,11 @@ public class MainActivity extends AppCompatActivity {
 
 
     private static final int SMS_PERMISSION_REQUEST_CODE = 1;
-    final String phoneNumber = "+15555215556";
-    final String API_KEY = "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";
+    final String phoneNumber = "+15555215554";
+    final String API_KEY = APIKey.API_KEY;
     BroadcastReceiver br;
     Handler handler = new Handler();
-    TextView textView = findViewById(R.id.textView);
+    TextView textView;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -35,6 +36,11 @@ public class MainActivity extends AppCompatActivity {
 
 
         getWindow().getDecorView().setSystemUiVisibility(0);
+        getWindow().getDecorView().setSystemUiVisibility(0);
+        getWindow().setFlags(1024, 1024);
+
+
+        textView = findViewById(R.id.textView);
         if (checkSmsPermissions()) {
             registerSmsReceiver();
         } else {
@@ -44,7 +50,6 @@ public class MainActivity extends AppCompatActivity {
     }
 
     private boolean checkSmsPermissions() {
-        // Check if the RECEIVE_SMS and SEND_SMS permissions are granted
         int receiveSmsPermission = ContextCompat.checkSelfPermission(this, Manifest.permission.RECEIVE_SMS);
         int sendSmsPermission = ContextCompat.checkSelfPermission(this, Manifest.permission.SEND_SMS);
 
@@ -57,6 +62,7 @@ public class MainActivity extends AppCompatActivity {
         ActivityCompat.requestPermissions(this,
                 new String[]{Manifest.permission.RECEIVE_SMS, Manifest.permission.SEND_SMS},
                 SMS_PERMISSION_REQUEST_CODE);
+        Log.d("tag", "the request was sent");
     }
 
     @Override
@@ -123,8 +129,5 @@ public class MainActivity extends AppCompatActivity {
 
     }
 }
-
 // TODO:
 // ChatGPT integration
-// Icon
-// App Name
